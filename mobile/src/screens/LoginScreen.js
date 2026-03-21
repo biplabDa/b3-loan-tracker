@@ -7,7 +7,8 @@ import { setApiBaseUrl } from '../api/client';
 
 export default function LoginScreen() {
   const { login } = useAuth();
-  const [apiUrl, setApiUrl] = useState('http://localhost:5000/api');
+  // Use 10.0.2.2 for Android emulator, or your computer's IP for real device
+  const [apiUrl, setApiUrl] = useState('http://10.0.2.2:5001/api');
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [submitting, setSubmitting] = useState(false);
@@ -18,6 +19,7 @@ export default function LoginScreen() {
       setApiBaseUrl(apiUrl.trim());
       await login(username.trim(), password);
     } catch (error) {
+      console.log('Login error:', JSON.stringify(error));
       Alert.alert('Login failed', error?.response?.data?.message || 'Please check credentials.');
     } finally {
       setSubmitting(false);

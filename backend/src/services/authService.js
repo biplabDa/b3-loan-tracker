@@ -16,16 +16,9 @@ async function login(username, password) {
     throw error;
   }
 
-  const hash = env.admin.passwordHash;
-  let valid = false;
 
-  if (hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$')) {
-    valid = await bcrypt.compare(password, hash);
-  } else {
-    valid = password === hash;
-  }
-
-  if (!valid) {
+  // Use plain password comparison only
+  if (password !== env.admin.passwordHash) {
     const error = new Error('Invalid credentials.');
     error.statusCode = StatusCodes.UNAUTHORIZED;
     throw error;

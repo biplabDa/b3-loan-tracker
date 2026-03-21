@@ -21,7 +21,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (username, password) => {
+    console.log('Login attempt:', { username, password });
     const response = await client.post('/auth/login', { username, password });
+    console.log('Login response:', response.data);
     const value = response.data.token;
     await AsyncStorage.setItem('token', value);
     setToken(value);

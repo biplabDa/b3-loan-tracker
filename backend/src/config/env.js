@@ -11,7 +11,7 @@ for (const key of required) {
 }
 
 module.exports = {
-  port: Number(process.env.PORT || 5000),
+  port: Number(process.env.PORT || 5001),
   db: {
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT || 3306),

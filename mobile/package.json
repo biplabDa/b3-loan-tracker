@@ -22,6 +22,10 @@
     "react-native-screens": "~3.31.1"
   },
   "devDependencies": {
-    "@react-native/babel-preset": "0.74.83"
+    "@react-native/babel-preset": "0.74.83",
+    "@react-native-community/cli": "15.0.1",
+    "@react-native/metro-config": "0.74.83",
+    "@react-native-community/cli-platform-android": "15.0.1",
+    "@react-native-community/cli-platform-ios": "15.0.1"
   }
 }

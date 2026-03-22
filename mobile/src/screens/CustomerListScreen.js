@@ -84,6 +84,9 @@ export default function CustomerListScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.heroCard}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.navigate('Dashboard')}>
+          <Text style={styles.backBtnText}>← Back to Dashboard</Text>
+        </Pressable>
         <Text style={styles.heading}>Customer Directory</Text>
         <Text style={styles.subHeading}>Search, review, and open customer loan records</Text>
 
@@ -142,6 +145,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     marginBottom: 12
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 8
+  },
+  backBtnText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 14
   },
   heading: {
     fontSize: 22,

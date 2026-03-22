@@ -136,6 +136,9 @@ async function createLoan(payload) {
     balance: calc.totalPayable,
     monthly_interest_due: monthlyInterestDue,
     current_cycle_paid: 0,
+    total_interest: roundTo2(calc.totalPayable - calc.principal),
+    total_interest_paid: 0,
+    paid_month_count: 0,
     payment_status: paymentStatus,
     last_payment_date: null,
     next_payment_date: nextPaymentDate,
@@ -245,6 +248,12 @@ async function updateLoan(loanId, payload) {
     balance,
     monthly_interest_due: monthlyInterestDue,
     current_cycle_paid: currentCyclePaid,
+    total_interest: roundTo2(calc.totalPayable - calc.principal),
+    total_interest_paid: roundTo2(Math.min(paid, Math.max(calc.totalPayable - calc.principal, 0))),
+    paid_month_count:
+      monthlyInterestDue > 0
+        ? Math.floor(roundTo2(Math.min(paid, Math.max(calc.totalPayable - calc.principal, 0))) / monthlyInterestDue)
+        : 0,
     payment_status: paymentStatus,
     last_payment_date: existingLoan.last_payment_date ? formatDateOnly(existingLoan.last_payment_date) : null,
     next_payment_date: nextPaymentDate,
@@ -265,11 +274,18 @@ async function getLoans(search = '') {
        l.interest_rate,
        l.duration,
        l.total,
+       (l.total - l.amount) AS total_interest,
+       LEAST(l.paid, GREATEST(l.total - l.amount, 0)) AS total_interest_paid,
        l.emi,
        l.paid,
        l.balance,
        l.monthly_interest_due,
        l.current_cycle_paid,
+       CASE
+         WHEN l.monthly_interest_due > 0
+         THEN FLOOR(LEAST(l.paid, GREATEST(l.total - l.amount, 0)) / l.monthly_interest_due)
+         ELSE 0
+       END AS paid_month_count,
        l.start_date,
        l.last_payment_date,
        l.next_payment_date,
@@ -305,10 +321,17 @@ async function getOverdueLoans() {
        c.phone AS customer_phone,
        l.amount,
        l.total,
+       (l.total - l.amount) AS total_interest,
+       LEAST(l.paid, GREATEST(l.total - l.amount, 0)) AS total_interest_paid,
        l.paid,
        l.balance,
        l.monthly_interest_due,
        l.current_cycle_paid,
+       CASE
+         WHEN l.monthly_interest_due > 0
+         THEN FLOOR(LEAST(l.paid, GREATEST(l.total - l.amount, 0)) / l.monthly_interest_due)
+         ELSE 0
+       END AS paid_month_count,
        l.start_date,
        l.last_payment_date,
        l.next_payment_date,

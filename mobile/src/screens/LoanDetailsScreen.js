@@ -261,14 +261,16 @@ export default function LoanDetailsScreen() {
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.payment_status) }]}>
               <Text style={styles.statusText}>{item.payment_status || 'UNPAID'}</Text>
             </View>
-            <Text style={styles.loanLine}>Principal: {money(item.amount)}</Text>
+            <Text style={styles.loanLine}>Principal Amount: {money(item.amount)}</Text>
             <Text style={styles.loanLine}>Monthly Interest: {Number(item.interest_rate || 0).toFixed(2)}%</Text>
             <Text style={styles.loanLine}>Monthly Due: {money(item.monthly_interest_due)}</Text>
-            <Text style={styles.loanLine}>Total: {money(item.total)}</Text>
+            <Text style={styles.loanLine}>Total Interest: {money(item.total_interest)}</Text>
+            <Text style={styles.loanLine}>Total Interest Paid: {money(item.total_interest_paid)}</Text>
             <Text style={styles.loanLine}>EMI: {money(item.emi)}</Text>
             <Text style={styles.loanLine}>Paid: {money(item.paid)}</Text>
             <Text style={styles.loanLine}>Balance: {money(item.balance)}</Text>
             <Text style={styles.loanLine}>Cycle Paid: {money(item.current_cycle_paid)}</Text>
+            <Text style={styles.loanLine}>Paid Month Count: {item.paid_month_count}</Text>
             <Text style={styles.loanLine}>Last Payment Date: {item.last_payment_date ? String(item.last_payment_date).slice(0, 10) : 'No payment yet'}</Text>
             <Text style={styles.loanLine}>Next Payment Date: {String(item.next_payment_date).slice(0, 10)}</Text>
             <Text style={styles.loanLine}>Overdue Days: {item.overdue_days}</Text>

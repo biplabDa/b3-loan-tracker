@@ -19,7 +19,7 @@ async function addPayment(payload) {
     await connection.beginTransaction();
 
     const [loanRows] = await connection.execute(
-      `SELECT id, paid, balance, monthly_interest_due, current_cycle_paid, last_payment_date, next_payment_date
+      `SELECT id, amount, total, paid, balance, monthly_interest_due, current_cycle_paid, last_payment_date, next_payment_date
        FROM loans
        WHERE id = ?
        FOR UPDATE`,
@@ -48,6 +48,7 @@ async function addPayment(payload) {
 
     const paid = roundTo2(Number(loan.paid) + amount);
     const balance = roundTo2(Number(loan.balance) - amount);
+    const totalInterest = roundTo2(Math.max(Number(loan.total) - Number(loan.amount), 0));
     let currentCyclePaid = roundTo2(Number(loan.current_cycle_paid || 0) + amount);
     let nextPaymentDate = formatDateOnly(loan.next_payment_date);
 
@@ -81,8 +82,11 @@ async function addPayment(payload) {
       payment_date: paymentDate,
       paid,
       balance,
+      total_interest: totalInterest,
+      total_interest_paid: roundTo2(Math.min(paid, totalInterest)),
       current_cycle_paid: currentCyclePaid,
       monthly_interest_due: monthlyInterestDue,
+      paid_month_count: monthlyInterestDue > 0 ? Math.floor(roundTo2(Math.min(paid, totalInterest)) / monthlyInterestDue) : 0,
       next_payment_date: nextPaymentDate,
       payment_status: paymentStatus
     };

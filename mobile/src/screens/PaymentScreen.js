@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -45,6 +45,28 @@ export default function PaymentScreen() {
         }
       : null
   );
+
+  useEffect(() => {
+    setLoanId(incomingLoanId);
+    setAmount(incomingMonthlyInterestDue !== undefined ? String(incomingMonthlyInterestDue) : '');
+    setLoanInfo(
+      incomingLoanId
+        ? {
+            id: Number(incomingLoanId),
+            customer_name: incomingCustomerName,
+            monthly_interest_due: incomingMonthlyInterestDue,
+            next_payment_date: incomingNextPaymentDate,
+            payment_status: incomingPaymentStatus
+          }
+        : null
+    );
+  }, [
+    incomingLoanId,
+    incomingMonthlyInterestDue,
+    incomingNextPaymentDate,
+    incomingCustomerName,
+    incomingPaymentStatus
+  ]);
 
   const fetchLoanInfo = useCallback(async () => {
     if (!loanId) {

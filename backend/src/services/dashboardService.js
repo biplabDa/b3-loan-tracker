@@ -30,6 +30,7 @@ async function getDashboardSummary() {
     `SELECT COALESCE(SUM(LEAST(paid, GREATEST(total - amount, 0))), 0) AS total_profit
      FROM loans`
   );
+  console.log("hhhhhh", [profitStats]);
 
   return {
     total_customers: Number(customerStats.total_customers),

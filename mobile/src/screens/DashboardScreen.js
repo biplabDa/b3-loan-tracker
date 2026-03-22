@@ -20,6 +20,7 @@ export default function DashboardScreen() {
     try {
       setLoading(true);
       const response = await client.get('/dashboard');
+      console.log(response.data);
       setStats(response.data);
     } catch (error) {
       Alert.alert('Error', error?.response?.data?.message || 'Failed to load dashboard');

@@ -21,6 +21,8 @@ function DrawerStack() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.primary },
         headerTintColor: '#fff',
+        headerLeft: () => null,
+        swipeEnabled: false,
         drawerActiveTintColor: colors.primary,
         drawerLabelStyle: { fontWeight: '600' }
       }}

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import { colors } from '../theme/colors';
 
 function formatDate(date) {
@@ -29,30 +29,21 @@ export function todayDateString() {
 
 export default function DatePickerField({ label, value, onChangeText }) {
   const [showPicker, setShowPicker] = useState(false);
+  const [pickerDate, setPickerDate] = useState(parseDateString(value));
   const selectedDate = useMemo(() => parseDateString(value), [value]);
 
-  const onChange = (event, date) => {
-    if (Platform.OS === 'android') {
-      setShowPicker(false);
-    }
-
-    if (date) {
-      onChangeText(formatDate(date));
-    }
+  const openPicker = () => {
+    setPickerDate(selectedDate);
+    setShowPicker(true);
   };
 
-  const openPicker = () => {
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value: selectedDate,
-        mode: 'date',
-        is24Hour: true,
-        onChange
-      });
-      return;
-    }
+  const onConfirm = (date) => {
+    setShowPicker(false);
+    onChangeText(formatDate(date));
+  };
 
-    setShowPicker(true);
+  const onCancel = () => {
+    setShowPicker(false);
   };
 
   return (
@@ -62,18 +53,15 @@ export default function DatePickerField({ label, value, onChangeText }) {
         <Text style={styles.valueText}>{value || 'Select date'}</Text>
       </Pressable>
 
-      {showPicker && Platform.OS === 'ios' ? (
-        <View style={styles.pickerWrap}>
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="spinner"
-            onChange={onChange}
-          />
-          <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
-            <Text style={styles.doneText}>Done</Text>
-          </Pressable>
-        </View>
+      {showPicker ? (
+        <DatePicker
+          modal
+          open={showPicker}
+          date={pickerDate}
+          mode="date"
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+        />
       ) : null}
     </View>
   );

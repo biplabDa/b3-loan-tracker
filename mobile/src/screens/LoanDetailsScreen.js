@@ -20,6 +20,10 @@ function money(value) {
   return `₹ ${Number(value || 0).toFixed(2)}`;
 }
 
+function dateValue(value) {
+  return value ? String(value).slice(0, 10) : '-';
+}
+
 export default function LoanDetailsScreen() {
   const route = useRoute();
   const navigation = useNavigation();
@@ -253,24 +257,54 @@ export default function LoanDetailsScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchLoans} />}
         renderItem={({ item }) => (
           <View style={styles.loanCard}>
-            <Text style={styles.loanHeading}>#{item.id} - {item.customer_name}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.payment_status) }]}>
-              <Text style={styles.statusText}>{item.payment_status || 'UNPAID'}</Text>
+            <View style={styles.loanTopRow}>
+              <View style={styles.loanNameWrap}>
+                <Text style={styles.loanHeading}>{item.customer_name}</Text>
+                <Text style={styles.loanSubHeading}>Loan #{item.id}</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.payment_status) }]}> 
+                <Text style={styles.statusText}>{item.payment_status || 'UNPAID'}</Text>
+              </View>
             </View>
-            <Text style={styles.loanLine}>Interest Payment Status: {item.payment_status || 'UNPAID'}</Text>
-            <Text style={styles.loanLine}>Principal Amount: {money(item.amount)}</Text>
-            <Text style={styles.loanLine}>Monthly Interest: {Number(item.interest_rate || 0).toFixed(2)}%</Text>
-            <Text style={styles.loanLine}>Monthly Due: {money(item.monthly_interest_due)}</Text>
-            <Text style={styles.loanLine}>Total Interest: {money(item.total_interest)}</Text>
-            <Text style={styles.loanLine}>Total Interest Paid: {money(item.total_interest_paid)}</Text>
-            <Text style={styles.loanLine}>EMI: {money(item.emi)}</Text>
-            <Text style={styles.loanLine}>Paid: {money(item.paid)}</Text>
-            <Text style={styles.loanLine}>Balance: {money(item.balance)}</Text>
-            <Text style={styles.loanLine}>Cycle Paid: {money(item.current_cycle_paid)}</Text>
-            <Text style={styles.loanLine}>Paid Month Count: {item.paid_month_count}</Text>
-            <Text style={styles.loanLine}>Last Payment Date: {item.last_payment_date ? String(item.last_payment_date).slice(0, 10) : 'No payment yet'}</Text>
-            <Text style={styles.loanLine}>Next Payment Date: {String(item.next_payment_date).slice(0, 10)}</Text>
-            <Text style={styles.loanLine}>Overdue Days: {item.overdue_days}</Text>
+
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Interest Summary</Text>
+              <View style={styles.metricGrid}>
+                <View style={styles.metricBox}>
+                  <Text style={styles.metricLabel}>Monthly Interest</Text>
+                  <Text style={styles.metricValue}>{Number(item.interest_rate || 0).toFixed(2)}%</Text>
+                </View>
+                <View style={styles.metricBox}>
+                  <Text style={styles.metricLabel}>Monthly Due</Text>
+                  <Text style={styles.metricValue}>{money(item.monthly_interest_due)}</Text>
+                </View>
+                <View style={styles.metricBox}>
+                  <Text style={styles.metricLabel}>Total Interest</Text>
+                  <Text style={styles.metricValue}>{money(item.total_interest)}</Text>
+                </View>
+                <View style={styles.metricBox}>
+                  <Text style={styles.metricLabel}>Interest Paid</Text>
+                  <Text style={styles.metricValue}>{money(item.total_interest_paid)}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Schedule</Text>
+              <Text style={styles.loanLine}>Paid Month Count: {item.paid_month_count}</Text>
+              <Text style={styles.loanLine}>Last Payment Date: {item.last_payment_date ? dateValue(item.last_payment_date) : 'No payment yet'}</Text>
+              <Text style={styles.loanLine}>Next Payment Date: {dateValue(item.next_payment_date)}</Text>
+              <Text style={styles.loanLine}>Overdue Days: {item.overdue_days}</Text>
+            </View>
+
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>Loan Totals</Text>
+              <Text style={styles.loanLine}>Principal Amount: {money(item.amount)}</Text>
+              <Text style={styles.loanLine}>EMI: {money(item.emi)}</Text>
+              <Text style={styles.loanLine}>Total Paid: {money(item.paid)}</Text>
+              <Text style={styles.loanLine}>Outstanding Balance: {money(item.balance)}</Text>
+              <Text style={styles.loanLine}>Current Cycle Paid: {money(item.current_cycle_paid)}</Text>
+            </View>
 
             {editingLoanId === item.id ? (
               <View style={styles.editSection}>
@@ -321,25 +355,27 @@ export default function LoanDetailsScreen() {
                 </View>
               </View>
             ) : (
-              <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
-                <Text style={styles.editButtonText}>Edit Loan</Text>
-              </Pressable>
-            )}
+              <View style={styles.actionRow}>
+                <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
+                  <Text style={styles.editButtonText}>Edit Loan</Text>
+                </Pressable>
 
-            <Pressable
-              style={styles.payButton}
-              onPress={() =>
-                navigation.navigate('Payments', {
-                  loanId: item.id,
-                  customerName: item.customer_name,
-                  monthlyInterestDue: item.monthly_interest_due,
-                  nextPaymentDate: item.next_payment_date,
-                  paymentStatus: item.payment_status
-                })
-              }
-            >
-              <Text style={styles.payButtonText}>Add Payment</Text>
-            </Pressable>
+                <Pressable
+                  style={styles.payButton}
+                  onPress={() =>
+                    navigation.navigate('Payments', {
+                      loanId: item.id,
+                      customerName: item.customer_name,
+                      monthlyInterestDue: item.monthly_interest_due,
+                      nextPaymentDate: item.next_payment_date,
+                      paymentStatus: item.payment_status
+                    })
+                  }
+                >
+                  <Text style={styles.payButtonText}>Add Payment</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
         ListEmptyComponent={<Text style={styles.empty}>No loans found</Text>}
@@ -437,32 +473,81 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12
+  },
+  loanTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: 10
   },
+  loanNameWrap: {
+    flex: 1,
+    marginRight: 10
+  },
   loanHeading: {
-    fontWeight: '700',
+    fontWeight: '800',
+    fontSize: 17,
     color: colors.textPrimary,
-    marginBottom: 4
+    marginBottom: 2
+  },
+  loanSubHeading: {
+    color: colors.textSecondary,
+    fontSize: 12
   },
   statusBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 999,
-    marginBottom: 6
+    marginBottom: 2
   },
   statusText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 12
   },
+  sectionBlock: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 8
+  },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: 6,
+    fontSize: 13
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'
+  },
+  metricBox: {
+    width: '48%',
+    backgroundColor: '#f2f6fa',
+    borderRadius: 10,
+    padding: 8,
+    marginBottom: 8
+  },
+  metricLabel: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    marginBottom: 2
+  },
+  metricValue: {
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
   loanLine: {
-    color: colors.textSecondary
+    color: colors.textSecondary,
+    marginTop: 2
   },
   editSection: {
-    marginTop: 8,
+    marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.border
@@ -489,6 +574,7 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   editButton: {
+    width: '48%',
     marginTop: 8,
     backgroundColor: '#0d9488',
     borderRadius: 8,
@@ -500,11 +586,16 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   payButton: {
+    width: '48%',
     marginTop: 8,
     backgroundColor: colors.accent,
     borderRadius: 8,
     alignItems: 'center',
     paddingVertical: 8
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   },
   payButtonText: {
     color: '#fff',

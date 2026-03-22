@@ -19,6 +19,10 @@ function currency(value) {
   return `₹ ${Number(value || 0).toFixed(2)}`;
 }
 
+function dateValue(value) {
+  return value ? String(value).slice(0, 10) : '-';
+}
+
 export default function PaymentScreen() {
   const route = useRoute();
   const incomingLoanId = route.params?.loanId ? String(route.params.loanId) : '';
@@ -123,35 +127,73 @@ export default function PaymentScreen() {
     }
   };
 
+  const statusColor =
+    loanInfo?.payment_status === 'PAID'
+      ? '#166534'
+      : loanInfo?.payment_status === 'PARTIAL'
+        ? '#a16207'
+        : '#6b7280';
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.formCard}>
-        <Text style={styles.heading}>Record Payment</Text>
-        {loanInfo ? (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>{loanInfo.customer_name || `Loan #${loanInfo.id}`}</Text>
-            <Text style={styles.summaryText}>Interest Payment Status: {loanInfo.payment_status || '-'}</Text>
-            <Text style={styles.summaryText}>Monthly Due: {currency(loanInfo.monthly_interest_due)}</Text>
-            <Text style={styles.summaryText}>Total Interest: {currency(loanInfo.total_interest)}</Text>
-            <Text style={styles.summaryText}>Total Interest Paid: {currency(loanInfo.total_interest_paid)}</Text>
-            <Text style={styles.summaryText}>
-              Remaining Interest: {currency((Number(loanInfo.total_interest || 0) - Number(loanInfo.total_interest_paid || 0)) || 0)}
-            </Text>
-            <Text style={styles.summaryText}>
-              Next Payment Date: {loanInfo.next_payment_date ? String(loanInfo.next_payment_date).slice(0, 10) : '-'}
-            </Text>
+      <View style={styles.heroCard}>
+        <Text style={styles.heading}>Payment Record</Text>
+        <Text style={styles.subHeading}>Track interest collections and due schedule</Text>
+      </View>
+
+      {loanInfo ? (
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTop}>
+            <View style={styles.summaryNameWrap}>
+              <Text style={styles.summaryTitle}>{loanInfo.customer_name || `Loan #${loanInfo.id}`}</Text>
+              <Text style={styles.summaryMeta}>Loan ID: {loanInfo.id || '-'}</Text>
+            </View>
+            <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
+              <Text style={styles.statusPillText}>{loanInfo.payment_status || 'UNPAID'}</Text>
+            </View>
           </View>
-        ) : null}
+
+          <View style={styles.metricGrid}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Monthly Due</Text>
+              <Text style={styles.metricValue}>{currency(loanInfo.monthly_interest_due)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Total Interest</Text>
+              <Text style={styles.metricValue}>{currency(loanInfo.total_interest)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Interest Paid</Text>
+              <Text style={styles.metricValue}>{currency(loanInfo.total_interest_paid)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Remaining Interest</Text>
+              <Text style={styles.metricValue}>
+                {currency((Number(loanInfo.total_interest || 0) - Number(loanInfo.total_interest_paid || 0)) || 0)}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.summaryText}>Next Payment Date: {dateValue(loanInfo.next_payment_date)}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.formCard}>
+        <Text style={styles.formTitle}>Add Interest Payment</Text>
         <FormInput label="Loan ID" value={loanId} onChangeText={setLoanId} keyboardType="numeric" />
         <FormInput label="Interest Payment Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
         <DatePickerField label="Payment Date" value={paymentDate} onChangeText={setPaymentDate} />
 
         <Pressable style={styles.button} onPress={submitPayment}>
-          <Text style={styles.buttonText}>Add Payment</Text>
+          <Text style={styles.buttonText}>Save Payment</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.listTitle}>Payment History</Text>
+      <View style={styles.listHeader}>
+        <Text style={styles.listTitle}>Payment History</Text>
+        <Text style={styles.historyCount}>{history.length}</Text>
+      </View>
+
       <FlatList
         scrollEnabled={false}
         data={history}
@@ -159,12 +201,21 @@ export default function PaymentScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchHistory} />}
         renderItem={({ item }) => (
           <View style={styles.itemCard}>
-            <Text style={styles.itemTitle}>Payment #{item.id}</Text>
-            <Text style={styles.itemText}>Amount: {currency(item.amount)}</Text>
-            <Text style={styles.itemText}>Date: {String(item.payment_date).slice(0, 10)}</Text>
+            <View style={styles.itemTop}>
+              <Text style={styles.itemTitle}>Payment #{item.id}</Text>
+              <Text style={styles.itemDate}>{dateValue(item.payment_date)}</Text>
+            </View>
+            <Text style={styles.itemAmount}>{currency(item.amount)}</Text>
+            <Text style={styles.itemText}>Interest payment collected</Text>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No payment history found</Text>}
+        contentContainerStyle={styles.historyListContent}
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No payment history found</Text>
+            <Text style={styles.empty}>Add the first payment from the form above.</Text>
+          </View>
+        }
       />
     </ScrollView>
   );
@@ -179,6 +230,14 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 24
   },
+  heroCard: {
+    backgroundColor: '#edf4fb',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#cddbeb',
+    padding: 14,
+    marginBottom: 10
+  },
   formCard: {
     backgroundColor: colors.surface,
     borderRadius: 14,
@@ -188,10 +247,20 @@ const styles = StyleSheet.create({
     marginBottom: 14
   },
   heading: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: '800',
     color: colors.textPrimary
+  },
+  subHeading: {
+    color: colors.textSecondary,
+    marginTop: 4,
+    fontSize: 13
+  },
+  formTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 16,
+    marginBottom: 8
   },
   button: {
     marginTop: 8,
@@ -203,15 +272,62 @@ const styles = StyleSheet.create({
   summaryCard: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 12,
-    backgroundColor: colors.background
+    backgroundColor: colors.surface
+  },
+  summaryTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+  summaryNameWrap: {
+    flex: 1,
+    marginRight: 8
   },
   summaryTitle: {
     color: colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 17
+  },
+  summaryMeta: {
+    marginTop: 2,
+    color: colors.textSecondary,
+    fontSize: 12
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  },
+  statusPillText: {
+    color: '#fff',
     fontWeight: '700',
+    fontSize: 12
+  },
+  metricGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginBottom: 4
+  },
+  metricCard: {
+    width: '48%',
+    backgroundColor: '#f3f7fa',
+    borderRadius: 10,
+    padding: 8,
+    marginBottom: 8
+  },
+  metricLabel: {
+    color: colors.textSecondary,
+    fontSize: 11
+  },
+  metricValue: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginTop: 2
   },
   summaryText: {
     color: colors.textSecondary,
@@ -221,11 +337,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700'
   },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
   listTitle: {
     fontSize: 18,
     color: colors.textPrimary,
     fontWeight: '700',
-    marginBottom: 8
+    marginBottom: 0
+  },
+  historyCount: {
+    minWidth: 30,
+    textAlign: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#e8eef6',
+    borderRadius: 999,
+    color: '#2f455f',
+    fontWeight: '700'
+  },
+  historyListContent: {
+    paddingBottom: 10
   },
   itemCard: {
     backgroundColor: colors.surface,
@@ -235,17 +370,45 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10
   },
+  itemTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
   itemTitle: {
     color: colors.textPrimary,
     fontWeight: '700'
+  },
+  itemDate: {
+    color: colors.textSecondary,
+    fontSize: 12
+  },
+  itemAmount: {
+    color: '#0b6e4f',
+    fontWeight: '800',
+    fontSize: 20,
+    marginTop: 6
   },
   itemText: {
     color: colors.textSecondary,
     marginTop: 2
   },
+  emptyCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 4
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
   empty: {
     textAlign: 'center',
     color: colors.textSecondary,
-    marginTop: 10
+    marginTop: 4
   }
 });

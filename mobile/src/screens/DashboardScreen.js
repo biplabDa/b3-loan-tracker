@@ -39,25 +39,70 @@ export default function DashboardScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchDashboard} />}
     >
-      <View style={styles.row}>
-        <Text style={styles.heading}>Business Snapshot</Text>
-        <Pressable onPress={logout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
+      <View style={styles.heroCard}>
+        <View style={styles.row}>
+          <View>
+            <Text style={styles.heading}>Business Snapshot</Text>
+            <Text style={styles.subHeading}>Live overview of collection and risk</Text>
+          </View>
+          <Pressable onPress={logout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.heroLabel}>Total Profit</Text>
+        <Text style={styles.heroValue}>{stats ? formatCurrency(stats.total_profit) : '-'}</Text>
       </View>
 
-      <StatCard title="Total Customers" value={stats ? String(stats.total_customers) : '-'} />
-      <StatCard title="Total Loan Amount" value={stats ? formatCurrency(stats.total_loan_amount) : '-'} />
-      <StatCard title="Total Collected" value={stats ? formatCurrency(stats.total_collected) : '-'} />
-      <StatCard title="Total Profit" value={stats ? formatCurrency(stats.total_profit) : '-'} />
-      <StatCard
-        title="Total Overdue Amount"
-        value={stats ? formatCurrency(stats.total_overdue_amount) : '-'}
-      />
+      <View style={styles.metricsGrid}>
+        <View style={styles.metricCell}>
+          <StatCard
+            title="Customer Count"
+            value={stats ? String(stats.total_customers) : '-'}
+            helper="All active customers"
+            tone="neutral"
+          />
+        </View>
+        <View style={styles.metricCell}>
+          <StatCard
+            title="Total Loan Amount"
+            value={stats ? formatCurrency(stats.total_loan_amount) : '-'}
+            helper="Principal disbursed"
+            tone="neutral"
+          />
+        </View>
+        <View style={styles.metricCell}>
+          <StatCard
+            title="Total Collected"
+            value={stats ? formatCurrency(stats.total_collected) : '-'}
+            helper="All payments received"
+            tone="success"
+          />
+        </View>
+        <View style={styles.metricCell}>
+          <StatCard
+            title="Total Overdue Amount"
+            value={stats ? formatCurrency(stats.total_overdue_amount) : '-'}
+            helper="Current overdue interest"
+            tone="danger"
+          />
+        </View>
+      </View>
+
       <StatCard
         title="Outstanding Balance"
         value={stats ? formatCurrency(stats.total_outstanding_balance) : '-'}
+        helper="Remaining principal + unpaid amount"
+        tone="warning"
       />
+
+      <StatCard
+        title="Total Profit"
+        value={stats ? formatCurrency(stats.total_profit) : '-'}
+        helper="Realized interest profit"
+        tone="success"
+      />
+      </View>
     </ScrollView>
   );
 }
@@ -70,16 +115,40 @@ const styles = StyleSheet.create({
   content: {
     padding: 14
   },
+  heroCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#c7d3e1',
+    backgroundColor: '#eef4fb',
+    padding: 14,
+    marginBottom: 12
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10
+    marginBottom: 12
   },
   heading: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '700',
     color: colors.textPrimary
+  },
+  subHeading: {
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontSize: 12
+  },
+  heroLabel: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4
+  },
+  heroValue: {
+    color: '#0b6e4f',
+    fontSize: 30,
+    fontWeight: '800'
   },
   logoutButton: {
     backgroundColor: colors.accent,
@@ -90,5 +159,13 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#fff',
     fontWeight: '700'
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'
+  },
+  metricCell: {
+    width: '48%'
   }
 });

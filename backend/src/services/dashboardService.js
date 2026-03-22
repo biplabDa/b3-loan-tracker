@@ -3,19 +3,31 @@ const { query } = require('../config/db');
 async function getDashboardSummary() {
   const [customerStats] = await query('SELECT COUNT(*) AS total_customers FROM customers');
   const [loanStats] = await query(
-    'SELECT COALESCE(SUM(amount), 0) AS total_loan_amount, COALESCE(SUM(balance), 0) AS total_balance FROM loans'
+    `SELECT
+       COALESCE(SUM(amount), 0) AS total_loan_amount,
+       COALESCE(SUM(balance), 0) AS total_balance
+     FROM loans`
   );
   const [collectionStats] = await query(
     'SELECT COALESCE(SUM(amount), 0) AS total_collected FROM payments'
   );
   const [overdueStats] = await query(
-    `SELECT COALESCE(SUM(GREATEST(monthly_interest_due - current_cycle_paid, 0)), 0) AS total_overdue_amount
+    `SELECT COALESCE(
+        SUM(
+          CASE
+            WHEN CURRENT_DATE() > next_payment_date
+                 AND LEAST(paid, GREATEST(total - amount, 0)) < GREATEST(total - amount, 0)
+            THEN GREATEST(monthly_interest_due - current_cycle_paid, 0)
+            ELSE 0
+          END
+        ),
+        0
+      ) AS total_overdue_amount
      FROM loans
-     WHERE balance > 0
-       AND CURRENT_DATE() > next_payment_date`
+     WHERE balance > 0`
   );
   const [profitStats] = await query(
-    `SELECT COALESCE(SUM((paid / NULLIF(total, 0)) * (total - amount)), 0) AS total_profit
+    `SELECT COALESCE(SUM(LEAST(paid, GREATEST(total - amount, 0))), 0) AS total_profit
      FROM loans`
   );
 

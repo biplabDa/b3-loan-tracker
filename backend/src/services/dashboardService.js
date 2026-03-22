@@ -9,10 +9,10 @@ async function getDashboardSummary() {
     'SELECT COALESCE(SUM(amount), 0) AS total_collected FROM payments'
   );
   const [overdueStats] = await query(
-    `SELECT COALESCE(SUM(balance), 0) AS total_overdue_amount
+    `SELECT COALESCE(SUM(GREATEST(monthly_interest_due - current_cycle_paid, 0)), 0) AS total_overdue_amount
      FROM loans
      WHERE balance > 0
-       AND CURRENT_DATE() > DATE_ADD(start_date, INTERVAL duration MONTH)`
+       AND CURRENT_DATE() > next_payment_date`
   );
   const [profitStats] = await query(
     `SELECT COALESCE(SUM((paid / NULLIF(total, 0)) * (total - amount)), 0) AS total_profit

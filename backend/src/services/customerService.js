@@ -53,16 +53,21 @@ async function deleteCustomer(id) {
   return { message: 'Customer deleted successfully.' };
 }
 
-async function getCustomers(search = '') {
+async function getCustomers(search = '', limit) {
   const term = `%${search.trim()}%`;
+  const parsedLimit = Number(limit);
+  const hasLimit = Number.isFinite(parsedLimit) && parsedLimit > 0;
+  const safeLimit = hasLimit ? Math.min(Math.trunc(parsedLimit), 50) : null;
 
-  const rows = await query(
+  const sql =
     `SELECT id, name, phone, address, created_at
      FROM customers
      WHERE (? = '%%' OR name LIKE ? OR phone LIKE ? OR address LIKE ?)
-     ORDER BY created_at DESC`,
-    [term, term, term, term]
-  );
+     ORDER BY name ASC` + (hasLimit ? ' LIMIT ?' : '');
+
+  const params = hasLimit ? [term, term, term, term, safeLimit] : [term, term, term, term];
+
+  const rows = await query(sql, params);
 
   return rows;
 }

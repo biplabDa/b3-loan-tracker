@@ -7,10 +7,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import FormInput from '../components/FormInput';
+import DatePickerField, { todayDateString } from '../components/DatePickerField';
 import client from '../api/client';
 import { colors } from '../theme/colors';
 
@@ -25,15 +27,19 @@ export default function LoanDetailsScreen() {
   const selectedCustomerName = route.params?.customerName || '';
 
   const [customerId, setCustomerId] = useState(selectedCustomerId);
+  const [customerQuery, setCustomerQuery] = useState(selectedCustomerName);
+  const [customerSuggestions, setCustomerSuggestions] = useState([]);
   const [amount, setAmount] = useState('');
   const [interestRate, setInterestRate] = useState('2');
   const [duration, setDuration] = useState('12');
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(todayDateString());
 
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingLoanId, setEditingLoanId] = useState(null);
   const [editCustomerId, setEditCustomerId] = useState('');
+  const [editCustomerQuery, setEditCustomerQuery] = useState('');
+  const [editCustomerSuggestions, setEditCustomerSuggestions] = useState([]);
   const [editAmount, setEditAmount] = useState('');
   const [editInterestRate, setEditInterestRate] = useState('');
   const [editDuration, setEditDuration] = useState('');
@@ -65,6 +71,11 @@ export default function LoanDetailsScreen() {
   }, [loans, customerId]);
 
   const createLoan = async () => {
+    if (!customerId) {
+      Alert.alert('Customer Required', 'Please search and select a customer name first');
+      return;
+    }
+
     try {
       await client.post('/loans', {
         customer_id: Number(customerId),
@@ -84,6 +95,8 @@ export default function LoanDetailsScreen() {
   const startEdit = (loan) => {
     setEditingLoanId(loan.id);
     setEditCustomerId(String(loan.customer_id || ''));
+    setEditCustomerQuery(String(loan.customer_name || ''));
+    setEditCustomerSuggestions([]);
     setEditAmount(String(loan.amount || ''));
     setEditInterestRate(String(loan.interest_rate || ''));
     setEditDuration(String(loan.duration || ''));
@@ -93,6 +106,8 @@ export default function LoanDetailsScreen() {
   const cancelEdit = () => {
     setEditingLoanId(null);
     setEditCustomerId('');
+    setEditCustomerQuery('');
+    setEditCustomerSuggestions([]);
     setEditAmount('');
     setEditInterestRate('');
     setEditDuration('');
@@ -100,6 +115,11 @@ export default function LoanDetailsScreen() {
   };
 
   const saveEdit = async () => {
+    if (!editCustomerId) {
+      Alert.alert('Customer Required', 'Please select a customer for this loan');
+      return;
+    }
+
     try {
       await client.put(`/loans/${editingLoanId}`, {
         customer_id: Number(editCustomerId),
@@ -121,6 +141,10 @@ export default function LoanDetailsScreen() {
       return '#188038';
     }
 
+    if (status === 'UPCOMING') {
+      return '#2563eb';
+    }
+
     if (status === 'PARTIAL') {
       return '#9c5f00';
     }
@@ -128,12 +152,88 @@ export default function LoanDetailsScreen() {
     return '#6b7280';
   };
 
+  const fetchCustomerSuggestions = useCallback(async (term, forEdit = false) => {
+    const trimmed = term.trim();
+    if (!trimmed) {
+      if (forEdit) {
+        setEditCustomerSuggestions([]);
+      } else {
+        setCustomerSuggestions([]);
+      }
+      return;
+    }
+
+    try {
+      const response = await client.get('/customers', {
+        params: { search: trimmed, limit: 8 }
+      });
+
+      if (forEdit) {
+        setEditCustomerSuggestions(response.data || []);
+      } else {
+        setCustomerSuggestions(response.data || []);
+      }
+    } catch (error) {
+      if (forEdit) {
+        setEditCustomerSuggestions([]);
+      } else {
+        setCustomerSuggestions([]);
+      }
+    }
+  }, []);
+
+  const onChangeCustomerQuery = (value) => {
+    setCustomerQuery(value);
+    setCustomerId('');
+    fetchCustomerSuggestions(value, false);
+  };
+
+  const onSelectCustomer = (customer) => {
+    setCustomerId(String(customer.id));
+    setCustomerQuery(customer.name);
+    setCustomerSuggestions([]);
+  };
+
+  const onChangeEditCustomerQuery = (value) => {
+    setEditCustomerQuery(value);
+    setEditCustomerId('');
+    fetchCustomerSuggestions(value, true);
+  };
+
+  const onSelectEditCustomer = (customer) => {
+    setEditCustomerId(String(customer.id));
+    setEditCustomerQuery(customer.name);
+    setEditCustomerSuggestions([]);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.formCard}>
         <Text style={styles.heading}>Create Loan</Text>
         {selectedCustomerName ? <Text style={styles.selected}>Customer: {selectedCustomerName}</Text> : null}
-        <FormInput label="Customer ID" value={customerId} onChangeText={setCustomerId} keyboardType="numeric" />
+        <Text style={styles.label}>Customer Name</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search customer by name"
+          placeholderTextColor="#7c8da7"
+          value={customerQuery}
+          onChangeText={onChangeCustomerQuery}
+        />
+        {customerSuggestions.length ? (
+          <View style={styles.suggestionBox}>
+            {customerSuggestions.map((customer) => (
+              <Pressable
+                key={String(customer.id)}
+                style={styles.suggestionItem}
+                onPress={() => onSelectCustomer(customer)}
+              >
+                <Text style={styles.suggestionName}>{customer.name}</Text>
+                <Text style={styles.suggestionMeta}>ID {customer.id} - {customer.phone}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        {customerId ? <Text style={styles.selectedMeta}>Selected ID: {customerId}</Text> : null}
         <FormInput label="Loan Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
         <FormInput
           label="Interest Rate (% monthly)"
@@ -142,7 +242,7 @@ export default function LoanDetailsScreen() {
           keyboardType="numeric"
         />
         <FormInput label="Duration (months)" value={duration} onChangeText={setDuration} keyboardType="numeric" />
-        <FormInput label="Start Date (YYYY-MM-DD)" value={startDate} onChangeText={setStartDate} />
+        <DatePickerField label="Start Date" value={startDate} onChangeText={setStartDate} />
 
         <Pressable style={styles.button} onPress={createLoan}>
           <Text style={styles.buttonText}>Create Loan</Text>
@@ -163,20 +263,41 @@ export default function LoanDetailsScreen() {
             </View>
             <Text style={styles.loanLine}>Principal: {money(item.amount)}</Text>
             <Text style={styles.loanLine}>Monthly Interest: {Number(item.interest_rate || 0).toFixed(2)}%</Text>
+            <Text style={styles.loanLine}>Monthly Due: {money(item.monthly_interest_due)}</Text>
             <Text style={styles.loanLine}>Total: {money(item.total)}</Text>
             <Text style={styles.loanLine}>EMI: {money(item.emi)}</Text>
             <Text style={styles.loanLine}>Paid: {money(item.paid)}</Text>
             <Text style={styles.loanLine}>Balance: {money(item.balance)}</Text>
+            <Text style={styles.loanLine}>Cycle Paid: {money(item.current_cycle_paid)}</Text>
+            <Text style={styles.loanLine}>Last Payment Date: {item.last_payment_date ? String(item.last_payment_date).slice(0, 10) : 'No payment yet'}</Text>
+            <Text style={styles.loanLine}>Next Payment Date: {String(item.next_payment_date).slice(0, 10)}</Text>
             <Text style={styles.loanLine}>Overdue Days: {item.overdue_days}</Text>
 
             {editingLoanId === item.id ? (
               <View style={styles.editSection}>
-                <FormInput
-                  label="Customer ID"
-                  value={editCustomerId}
-                  onChangeText={setEditCustomerId}
-                  keyboardType="numeric"
+                <Text style={styles.label}>Customer Name</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search customer by name"
+                  placeholderTextColor="#7c8da7"
+                  value={editCustomerQuery}
+                  onChangeText={onChangeEditCustomerQuery}
                 />
+                {editCustomerSuggestions.length ? (
+                  <View style={styles.suggestionBox}>
+                    {editCustomerSuggestions.map((customer) => (
+                      <Pressable
+                        key={String(customer.id)}
+                        style={styles.suggestionItem}
+                        onPress={() => onSelectEditCustomer(customer)}
+                      >
+                        <Text style={styles.suggestionName}>{customer.name}</Text>
+                        <Text style={styles.suggestionMeta}>ID {customer.id} - {customer.phone}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+                {editCustomerId ? <Text style={styles.selectedMeta}>Selected ID: {editCustomerId}</Text> : null}
                 <FormInput label="Loan Amount" value={editAmount} onChangeText={setEditAmount} keyboardType="numeric" />
                 <FormInput
                   label="Interest Rate (% monthly)"
@@ -190,11 +311,7 @@ export default function LoanDetailsScreen() {
                   onChangeText={setEditDuration}
                   keyboardType="numeric"
                 />
-                <FormInput
-                  label="Start Date (YYYY-MM-DD)"
-                  value={editStartDate}
-                  onChangeText={setEditStartDate}
-                />
+                <DatePickerField label="Start Date" value={editStartDate} onChangeText={setEditStartDate} />
                 <View style={styles.editActions}>
                   <Pressable style={[styles.smallButton, styles.saveButton]} onPress={saveEdit}>
                     <Text style={styles.smallButtonText}>Save</Text>
@@ -212,7 +329,15 @@ export default function LoanDetailsScreen() {
 
             <Pressable
               style={styles.payButton}
-              onPress={() => navigation.navigate('Payments', { loanId: item.id })}
+              onPress={() =>
+                navigation.navigate('Payments', {
+                  loanId: item.id,
+                  customerName: item.customer_name,
+                  monthlyInterestDue: item.monthly_interest_due,
+                  nextPaymentDate: item.next_payment_date,
+                  paymentStatus: item.payment_status
+                })
+              }
             >
               <Text style={styles.payButtonText}>Add Payment</Text>
             </Pressable>
@@ -250,6 +375,47 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 10,
     color: colors.textSecondary
+  },
+  label: {
+    marginBottom: 6,
+    color: colors.textSecondary,
+    fontWeight: '600'
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    color: colors.textPrimary
+  },
+  suggestionBox: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    marginTop: 6,
+    marginBottom: 8
+  },
+  suggestionItem: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border
+  },
+  suggestionName: {
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
+  suggestionMeta: {
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontSize: 12
+  },
+  selectedMeta: {
+    color: colors.textSecondary,
+    marginBottom: 8
   },
   button: {
     marginTop: 8,

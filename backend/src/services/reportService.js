@@ -28,7 +28,9 @@ async function customerLoanReport(customerId) {
   }
 
   const loans = await query(
-    `SELECT id, amount, interest_rate, duration, total, emi, paid, balance, start_date, created_at
+    `SELECT id, amount, interest_rate, duration, total, emi, paid, balance,
+            monthly_interest_due, current_cycle_paid, payment_status, start_date,
+            last_payment_date, next_payment_date, created_at
      FROM loans
      WHERE customer_id = ?
      ORDER BY created_at DESC`,

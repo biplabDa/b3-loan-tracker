@@ -18,8 +18,12 @@ CREATE TABLE IF NOT EXISTS loans (
   emi DECIMAL(12, 2) NOT NULL,
   paid DECIMAL(12, 2) NOT NULL DEFAULT 0,
   balance DECIMAL(12, 2) NOT NULL,
-  payment_status ENUM('UNPAID', 'PARTIAL', 'PAID') NOT NULL DEFAULT 'UNPAID',
   start_date DATE NOT NULL,
+  monthly_interest_due DECIMAL(12, 2) NOT NULL,
+  current_cycle_paid DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  payment_status ENUM('UPCOMING', 'UNPAID', 'PARTIAL', 'PAID') NOT NULL DEFAULT 'UPCOMING',
+  last_payment_date DATE NULL,
+  next_payment_date DATE NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_loans_customer
     FOREIGN KEY (customer_id)

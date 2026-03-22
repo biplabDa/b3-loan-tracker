@@ -1,6 +1,11 @@
 const { StatusCodes } = require('http-status-codes');
 const { pool, query } = require('../config/db');
 const { roundTo2 } = require('../utils/loanCalculator');
+const {
+  addMonthsToDate,
+  calculatePaymentStatus,
+  formatDateOnly
+} = require('../utils/paymentSchedule');
 const { requiredDate, requiredPositiveNumber } = require('../utils/validation');
 
 async function addPayment(payload) {
@@ -14,7 +19,10 @@ async function addPayment(payload) {
     await connection.beginTransaction();
 
     const [loanRows] = await connection.execute(
-      'SELECT id, paid, balance FROM loans WHERE id = ? FOR UPDATE',
+      `SELECT id, paid, balance, monthly_interest_due, current_cycle_paid, last_payment_date, next_payment_date
+       FROM loans
+       WHERE id = ?
+       FOR UPDATE`,
       [loanId]
     );
 
@@ -25,6 +33,7 @@ async function addPayment(payload) {
     }
 
     const loan = loanRows[0];
+    const monthlyInterestDue = Number(loan.monthly_interest_due || 0);
 
     if (amount > Number(loan.balance)) {
       const error = new Error('Payment amount cannot exceed remaining balance.');
@@ -39,14 +48,29 @@ async function addPayment(payload) {
 
     const paid = roundTo2(Number(loan.paid) + amount);
     const balance = roundTo2(Number(loan.balance) - amount);
-    const paymentStatus = balance <= 0 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'UNPAID';
+    let currentCyclePaid = roundTo2(Number(loan.current_cycle_paid || 0) + amount);
+    let nextPaymentDate = formatDateOnly(loan.next_payment_date);
 
-    await connection.execute('UPDATE loans SET paid = ?, balance = ?, payment_status = ? WHERE id = ?', [
-      paid,
+    while (balance > 0 && monthlyInterestDue > 0 && currentCyclePaid >= monthlyInterestDue) {
+      currentCyclePaid = roundTo2(currentCyclePaid - monthlyInterestDue);
+      nextPaymentDate = addMonthsToDate(nextPaymentDate, 1);
+    }
+
+    const paymentStatus = calculatePaymentStatus({
       balance,
-      paymentStatus,
-      loanId
-    ]);
+      cyclePaid: currentCyclePaid,
+      monthlyInterestDue,
+      nextPaymentDate,
+      lastPaymentDate: paymentDate,
+      referenceDate: paymentDate
+    });
+
+    await connection.execute(
+      `UPDATE loans
+       SET paid = ?, balance = ?, current_cycle_paid = ?, payment_status = ?, last_payment_date = ?, next_payment_date = ?
+       WHERE id = ?`,
+      [paid, balance, currentCyclePaid, paymentStatus, paymentDate, nextPaymentDate, loanId]
+    );
 
     await connection.commit();
 
@@ -57,6 +81,9 @@ async function addPayment(payload) {
       payment_date: paymentDate,
       paid,
       balance,
+      current_cycle_paid: currentCyclePaid,
+      monthly_interest_due: monthlyInterestDue,
+      next_payment_date: nextPaymentDate,
       payment_status: paymentStatus
     };
   } catch (error) {

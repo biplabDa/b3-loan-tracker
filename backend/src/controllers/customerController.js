@@ -18,7 +18,7 @@ const deleteCustomer = asyncHandler(async (req, res) => {
 });
 
 const getCustomers = asyncHandler(async (req, res) => {
-  const data = await customerService.getCustomers(req.query.search || '');
+  const data = await customerService.getCustomers(req.query.search || '', req.query.limit);
   res.status(StatusCodes.OK).json(data);
 });
 

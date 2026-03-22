@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import FormInput from '../components/FormInput';
+import DatePickerField, { todayDateString } from '../components/DatePickerField';
 import client from '../api/client';
 import { colors } from '../theme/colors';
 
@@ -21,12 +22,44 @@ function currency(value) {
 export default function PaymentScreen() {
   const route = useRoute();
   const incomingLoanId = route.params?.loanId ? String(route.params.loanId) : '';
+  const incomingMonthlyInterestDue = route.params?.monthlyInterestDue;
+  const incomingNextPaymentDate = route.params?.nextPaymentDate;
+  const incomingCustomerName = route.params?.customerName || '';
+  const incomingPaymentStatus = route.params?.paymentStatus || '';
 
   const [loanId, setLoanId] = useState(incomingLoanId);
-  const [amount, setAmount] = useState('');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [amount, setAmount] = useState(
+    incomingMonthlyInterestDue !== undefined ? String(incomingMonthlyInterestDue) : ''
+  );
+  const [paymentDate, setPaymentDate] = useState(todayDateString());
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loanInfo, setLoanInfo] = useState(
+    incomingLoanId
+      ? {
+          id: Number(incomingLoanId),
+          customer_name: incomingCustomerName,
+          monthly_interest_due: incomingMonthlyInterestDue,
+          next_payment_date: incomingNextPaymentDate,
+          payment_status: incomingPaymentStatus
+        }
+      : null
+  );
+
+  const fetchLoanInfo = useCallback(async () => {
+    if (!loanId) {
+      setLoanInfo(null);
+      return;
+    }
+
+    try {
+      const response = await client.get('/loans');
+      const selectedLoan = (response.data || []).find((item) => String(item.id) === String(loanId));
+      setLoanInfo(selectedLoan || null);
+    } catch (error) {
+      setLoanInfo(null);
+    }
+  }, [loanId]);
 
   const fetchHistory = useCallback(async () => {
     if (!loanId) {
@@ -47,8 +80,9 @@ export default function PaymentScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      fetchLoanInfo();
       fetchHistory();
-    }, [fetchHistory])
+    }, [fetchHistory, fetchLoanInfo])
   );
 
   const submitPayment = async () => {
@@ -60,6 +94,7 @@ export default function PaymentScreen() {
       });
       setAmount('');
       Alert.alert('Success', 'Payment added');
+      fetchLoanInfo();
       fetchHistory();
     } catch (error) {
       Alert.alert('Error', error?.response?.data?.message || 'Unable to add payment');
@@ -70,9 +105,19 @@ export default function PaymentScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.formCard}>
         <Text style={styles.heading}>Record Payment</Text>
+        {loanInfo ? (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>{loanInfo.customer_name || `Loan #${loanInfo.id}`}</Text>
+            <Text style={styles.summaryText}>Status: {loanInfo.payment_status || '-'}</Text>
+            <Text style={styles.summaryText}>Monthly Due: {currency(loanInfo.monthly_interest_due)}</Text>
+            <Text style={styles.summaryText}>
+              Next Payment Date: {loanInfo.next_payment_date ? String(loanInfo.next_payment_date).slice(0, 10) : '-'}
+            </Text>
+          </View>
+        ) : null}
         <FormInput label="Loan ID" value={loanId} onChangeText={setLoanId} keyboardType="numeric" />
         <FormInput label="Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
-        <FormInput label="Payment Date (YYYY-MM-DD)" value={paymentDate} onChangeText={setPaymentDate} />
+        <DatePickerField label="Payment Date" value={paymentDate} onChangeText={setPaymentDate} />
 
         <Pressable style={styles.button} onPress={submitPayment}>
           <Text style={styles.buttonText}>Add Payment</Text>
@@ -127,6 +172,23 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     backgroundColor: colors.primary,
     alignItems: 'center'
+  },
+  summaryCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: colors.background
+  },
+  summaryTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: 4
+  },
+  summaryText: {
+    color: colors.textSecondary,
+    marginTop: 2
   },
   buttonText: {
     color: '#fff',

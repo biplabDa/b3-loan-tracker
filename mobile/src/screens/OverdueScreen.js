@@ -41,6 +41,9 @@ export default function OverdueScreen() {
           <View style={styles.card}>
             <Text style={styles.name}>{item.customer_name}</Text>
             <Text style={styles.text}>Phone: {item.customer_phone}</Text>
+            <Text style={styles.text}>Status: {item.payment_status}</Text>
+            <Text style={styles.text}>Monthly Due: {money(item.monthly_interest_due)}</Text>
+            <Text style={styles.text}>Next Payment Date: {String(item.next_payment_date).slice(0, 10)}</Text>
             <Text style={styles.text}>Balance: {money(item.balance)}</Text>
             <Text style={[styles.text, styles.overdue]}>Overdue Days: {item.overdue_days}</Text>
           </View>

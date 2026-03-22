@@ -67,6 +67,7 @@ export default function CustomerListScreen() {
           <Text style={styles.infoLabel}>Phone</Text>
           <Text style={styles.infoValue}>{item.phone}</Text>
         </View>
+
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Address</Text>
           <Text style={styles.infoValue}>{item.address}</Text>
@@ -134,188 +135,184 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     padding: 14
   },
-  searchWrap: {
-    flexDirection: 'row',
+  heroCard: {
+    backgroundColor: '#edf4fb',
+    borderWidth: 1,
+    borderColor: '#cddbeb',
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 12
   },
+  heading: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary
+  },
+  subHeading: {
+    marginTop: 4,
+    marginBottom: 12,
+    color: colors.textSecondary,
+    fontSize: 13
+  },
+  searchWrap: {
+    marginBottom: 10
+  },
   searchInput: {
-    flex: 1,
-    heroCard: {
-      backgroundColor: '#edf4fb',
-      borderWidth: 1,
-      borderColor: '#cddbeb',
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 12
-    },
-    heading: {
-      fontSize: 22,
-      fontWeight: '800',
-      color: colors.textPrimary
-    },
-    subHeading: {
-      marginTop: 4,
-      marginBottom: 12,
-      color: colors.textSecondary,
-      fontSize: 13
-    },
-    backgroundColor: colors.surface,
-      marginBottom: 10
-    borderRadius: 10,
-    paddingHorizontal: 12,
-  },
-  searchButton: {
-    marginLeft: 8,
-    backgroundColor: colors.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-    justifyContent: 'center',
-    paddingHorizontal: 16
-    actionRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between'
-    },
-  },
-      width: '48%',
-    color: '#fff',
-    fontWeight: '700'
-  },
-      alignItems: 'center',
-      paddingVertical: 10
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.textPrimary
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  searchButton: {
+    width: '48%',
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontWeight: '700'
+  },
+  clearButton: {
+    width: '48%',
+    backgroundColor: '#dae4ef',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10
+  },
+  clearButtonText: {
+    color: '#34506b',
+    fontWeight: '700'
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
+  listTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.textPrimary
+  },
+  listCount: {
+    minWidth: 30,
+    textAlign: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#e8eef6',
+    borderRadius: 999,
+    color: '#2f455f',
+    fontWeight: '700'
+  },
+  listContent: {
+    paddingBottom: 18
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
     padding: 14,
-    clearButton: {
-      width: '48%',
-      backgroundColor: '#dae4ef',
-      borderRadius: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingVertical: 10
-    },
-    clearButtonText: {
-      color: '#34506b',
-      fontWeight: '700'
-    },
-    listHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8
-    },
-    listTitle: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: colors.textPrimary
-    },
-    listCount: {
-      minWidth: 30,
-      textAlign: 'center',
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      backgroundColor: '#e8eef6',
-      borderRadius: 999,
-      color: '#2f455f',
-      fontWeight: '700'
-    },
-    listContent: {
-      paddingBottom: 18
-    },
     marginBottom: 10
+  },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  avatarWrap: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    backgroundColor: '#dbe8f5',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  avatarText: {
+    color: '#2f4f6f',
+    fontWeight: '800'
+  },
+  nameWrap: {
+    flex: 1,
+    marginLeft: 10
   },
   name: {
     fontSize: 17,
-      borderRadius: 14,
+    fontWeight: '800',
     color: colors.textPrimary
   },
-  text: {
-    cardTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10
-    },
-    avatarWrap: {
-      height: 40,
-      width: 40,
-      borderRadius: 20,
-      backgroundColor: '#dbe8f5',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    avatarText: {
-      color: '#2f4f6f',
-      fontWeight: '800'
-    },
-    nameWrap: {
-      flex: 1,
-      marginLeft: 10
-    },
+  customerId: {
     color: colors.textSecondary,
+    marginTop: 1,
+    fontSize: 12
+  },
+  loanTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#e7f4ed'
+  },
+  loanTagText: {
+    color: '#1c6a45',
+    fontWeight: '700',
+    fontSize: 12
+  },
+  infoRow: {
+    marginTop: 4
+  },
+  infoLabel: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3
+  },
+  infoValue: {
+    color: colors.textPrimary,
     marginTop: 2
-      fontWeight: '800',
-  empty: {
-    textAlign: 'center',
-    customerId: {
-      color: colors.textSecondary,
-      marginTop: 1,
-      fontSize: 12
-    },
-    loanTag: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 999,
-      backgroundColor: '#e7f4ed'
-    },
-    loanTagText: {
-      color: '#1c6a45',
-      fontWeight: '700',
-      fontSize: 12
-    },
-    infoRow: {
-      marginTop: 4
-    },
-    infoLabel: {
-      color: colors.textSecondary,
-      fontSize: 11,
-      textTransform: 'uppercase',
-      letterSpacing: 0.3
-    },
-    infoValue: {
-      color: colors.textPrimary,
-    marginTop: 20
+  },
+  cardFooter: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  footerText: {
+    color: colors.textSecondary,
+    fontSize: 12
+  },
+  footerAction: {
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  emptyCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: 18,
+    marginTop: 8,
+    alignItems: 'center'
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700'
+  },
+  emptySubTitle: {
+    marginTop: 4,
+    color: colors.textSecondary
   }
-    cardFooter: {
-      marginTop: 10,
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    footerText: {
-      color: colors.textSecondary,
-      fontSize: 12
-    },
-    footerAction: {
-      color: colors.primary,
-      fontWeight: '700'
-    },
-    emptyCard: {
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      padding: 18,
-      marginTop: 8,
-      alignItems: 'center'
-    },
-    emptyTitle: {
-      color: colors.textPrimary,
-      fontWeight: '700'
-    },
-    emptySubTitle: {
-      marginTop: 4,
-      color: colors.textSecondary
+});

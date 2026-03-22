@@ -63,9 +63,9 @@ async function getCustomers(search = '', limit) {
     `SELECT id, name, phone, address, created_at
      FROM customers
      WHERE (? = '%%' OR name LIKE ? OR phone LIKE ? OR address LIKE ?)
-     ORDER BY name ASC` + (hasLimit ? ' LIMIT ?' : '');
+     ORDER BY name ASC` + (hasLimit ? ` LIMIT ${safeLimit}` : '');
 
-  const params = hasLimit ? [term, term, term, term, safeLimit] : [term, term, term, term];
+  const params = [term, term, term, term];
 
   const rows = await query(sql, params);
 

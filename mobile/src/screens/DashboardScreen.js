@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import client from '../api/client';
 import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ function formatCurrency(value) {
 
 export default function DashboardScreen() {
   const { logout } = useAuth();
+  const navigation = useNavigation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,12 +57,14 @@ export default function DashboardScreen() {
 
       <View style={styles.metricsGrid}>
         <View style={styles.metricCell}>
-          <StatCard
-            title="Customer Count"
-            value={stats ? String(stats.total_customers) : '-'}
-            helper="All active customers"
-            tone="neutral"
-          />
+          <Pressable onPress={() => navigation.navigate('Customers')}>
+            <StatCard
+              title="Customer Count"
+              value={stats ? String(stats.total_customers) : '-'}
+              helper="All active customers"
+              tone="neutral"
+            />
+          </Pressable>
         </View>
         <View style={styles.metricCell}>
           <StatCard

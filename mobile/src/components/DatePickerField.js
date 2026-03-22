@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 
 function formatDate(date) {
@@ -41,26 +41,38 @@ export default function DatePickerField({ label, value, onChangeText }) {
     }
   };
 
+  const openPicker = () => {
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: selectedDate,
+        mode: 'date',
+        is24Hour: true,
+        onChange
+      });
+      return;
+    }
+
+    setShowPicker(true);
+  };
+
   return (
     <View style={styles.group}>
       <Text style={styles.label}>{label}</Text>
-      <Pressable style={styles.input} onPress={() => setShowPicker(true)}>
+      <Pressable style={styles.input} onPress={openPicker}>
         <Text style={styles.valueText}>{value || 'Select date'}</Text>
       </Pressable>
 
-      {showPicker ? (
+      {showPicker && Platform.OS === 'ios' ? (
         <View style={styles.pickerWrap}>
           <DateTimePicker
             value={selectedDate}
             mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display="spinner"
             onChange={onChange}
           />
-          {Platform.OS === 'ios' ? (
-            <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
-              <Text style={styles.doneText}>Done</Text>
-            </Pressable>
-          ) : null}
+          <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
+            <Text style={styles.doneText}>Done</Text>
+          </Pressable>
         </View>
       ) : null}
     </View>

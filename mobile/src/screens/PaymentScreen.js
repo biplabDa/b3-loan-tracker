@@ -74,36 +74,36 @@ export default function PaymentScreen() {
   ]);
 
   const fetchLoanInfo = useCallback(async () => {
-    if (!loanId) {
+    if (!incomingLoanId) {
       setLoanInfo(null);
       return;
     }
 
     try {
       const response = await client.get('/loans');
-      const selectedLoan = (response.data || []).find((item) => String(item.id) === String(loanId));
+      const selectedLoan = (response.data || []).find((item) => String(item.id) === String(incomingLoanId));
       setLoanInfo(selectedLoan || null);
     } catch (error) {
       setLoanInfo(null);
     }
-  }, [loanId]);
+  }, [incomingLoanId]);
 
   const fetchHistory = useCallback(async () => {
-    if (!loanId) {
+    if (!incomingLoanId) {
       setHistory([]);
       return;
     }
 
     try {
       setLoading(true);
-      const response = await client.get(`/payments/${loanId}`);
+      const response = await client.get(`/payments/${incomingLoanId}`);
       setHistory(response.data || []);
     } catch (error) {
       Alert.alert('Error', error?.response?.data?.message || 'Failed to load payment history');
     } finally {
       setLoading(false);
     }
-  }, [loanId]);
+  }, [incomingLoanId]);
 
   useFocusEffect(
     useCallback(() => {

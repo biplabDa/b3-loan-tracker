@@ -102,7 +102,6 @@ export default function DashboardScreen() {
         helper="Realized interest profit"
         tone="success"
       />
-      </View>
     </ScrollView>
   );
 }

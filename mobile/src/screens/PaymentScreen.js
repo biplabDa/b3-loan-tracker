@@ -9,7 +9,7 @@ import {
   Text,
   View
 } from 'react-native';
-import { useFocusEffect, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import FormInput from '../components/FormInput';
 import DatePickerField, { todayDateString } from '../components/DatePickerField';
 import client from '../api/client';
@@ -25,6 +25,7 @@ function dateValue(value) {
 
 export default function PaymentScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
   const incomingLoanId = route.params?.loanId ? String(route.params.loanId) : '';
   const incomingMonthlyInterestDue = route.params?.monthlyInterestDue;
   const incomingNextPaymentDate = route.params?.nextPaymentDate;
@@ -137,6 +138,9 @@ export default function PaymentScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.heroCard}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.navigate('Loan Details', { customerId: loanInfo?.customer_id, customerName: loanInfo?.customer_name })}>
+          <Text style={styles.backBtnText}>← Back to Loans</Text>
+        </Pressable>
         <Text style={styles.heading}>Payment Record</Text>
         <Text style={styles.subHeading}>Track interest collections and due schedule</Text>
       </View>
@@ -237,6 +241,15 @@ const styles = StyleSheet.create({
     borderColor: '#cddbeb',
     padding: 14,
     marginBottom: 10
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 8
+  },
+  backBtnText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 14
   },
   formCard: {
     backgroundColor: colors.surface,

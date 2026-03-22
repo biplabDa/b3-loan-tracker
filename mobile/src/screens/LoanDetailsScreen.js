@@ -214,6 +214,9 @@ export default function LoanDetailsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Pressable style={styles.backBtn} onPress={() => navigation.navigate('Customers')}>
+        <Text style={styles.backBtnText}>← Back to Customers</Text>
+      </Pressable>
       <View style={styles.formCard}>
         <Text style={styles.heading}>Create Loan</Text>
         {selectedCustomerName ? <Text style={styles.selected}>Customer: {selectedCustomerName}</Text> : null}
@@ -398,6 +401,15 @@ const styles = StyleSheet.create({
   content: {
     padding: 14,
     paddingBottom: 24
+  },
+  backBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 10
+  },
+  backBtnText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 14
   },
   formCard: {
     borderWidth: 1,

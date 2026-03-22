@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -48,6 +48,12 @@ export default function LoanDetailsScreen() {
   const [editInterestRate, setEditInterestRate] = useState('');
   const [editDuration, setEditDuration] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
+
+  useEffect(() => {
+    setCustomerId(selectedCustomerId);
+    setCustomerQuery(selectedCustomerName);
+    setCustomerSuggestions([]);
+  }, [selectedCustomerId, selectedCustomerName]);
 
   const fetchLoans = useCallback(async () => {
     try {

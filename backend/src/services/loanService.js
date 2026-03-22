@@ -15,12 +15,11 @@ const {
 } = require('../utils/validation');
 
 const PAYMENT_STATUS_SQL = `CASE
-         WHEN l.balance <= 0 THEN 'PAID'
-         WHEN l.current_cycle_paid > 0 AND l.current_cycle_paid < l.monthly_interest_due AND CURRENT_DATE() <= l.next_payment_date THEN 'PARTIAL'
-         WHEN l.current_cycle_paid > 0 AND l.current_cycle_paid < l.monthly_interest_due AND CURRENT_DATE() > l.next_payment_date THEN 'UNPAID'
-         WHEN l.last_payment_date IS NOT NULL AND CURRENT_DATE() <= l.next_payment_date THEN 'PAID'
-         WHEN CURRENT_DATE() > l.next_payment_date THEN 'UNPAID'
-         ELSE 'UPCOMING'
+         WHEN LEAST(l.paid, GREATEST(l.total - l.amount, 0)) >= GREATEST(l.total - l.amount, 0)
+         THEN 'PAID'
+         WHEN LEAST(l.paid, GREATEST(l.total - l.amount, 0)) > 0
+         THEN 'PARTIAL'
+         ELSE 'UNPAID'
        END`;
 
 async function resolveCustomerId(payload, fallbackCustomerId) {
@@ -80,15 +79,12 @@ async function createLoan(payload) {
   const formattedStartDate = formatDateOnly(startDate);
 
   const calc = calculateLoanDetails(amount, interestRate, duration);
+  const totalInterest = roundTo2(calc.totalPayable - calc.principal);
   const monthlyInterestDue = calculateMonthlyInterestDue(calc.principal, calc.interestRateMonthly);
   const nextPaymentDate = addMonthsToDate(formattedStartDate, 1);
   const paymentStatus = calculatePaymentStatus({
-    balance: calc.totalPayable,
-    cyclePaid: 0,
-    monthlyInterestDue,
-    nextPaymentDate,
-    lastPaymentDate: null,
-    referenceDate: startDate
+    totalInterest,
+    totalInterestPaid: 0
   });
 
   const result = await query(
@@ -181,6 +177,7 @@ async function updateLoan(loanId, payload) {
   const formattedStartDate = formatDateOnly(startDate);
 
   const calc = calculateLoanDetails(amount, interestRate, duration);
+  const totalInterest = roundTo2(calc.totalPayable - calc.principal);
   const paid = roundTo2(Number(existingLoan.paid));
 
   if (paid > calc.totalPayable) {
@@ -190,6 +187,7 @@ async function updateLoan(loanId, payload) {
   }
 
   const balance = roundTo2(calc.totalPayable - paid);
+  const totalInterestPaid = roundTo2(Math.min(paid, Math.max(totalInterest, 0)));
   const monthlyInterestDue = calculateMonthlyInterestDue(calc.principal, calc.interestRateMonthly);
   let currentCyclePaid = roundTo2(Number(existingLoan.current_cycle_paid) || 0);
   let nextPaymentDate = existingLoan.next_payment_date
@@ -206,12 +204,8 @@ async function updateLoan(loanId, payload) {
   }
 
   const paymentStatus = calculatePaymentStatus({
-    balance,
-    cyclePaid: currentCyclePaid,
-    monthlyInterestDue,
-    nextPaymentDate,
-    lastPaymentDate: existingLoan.last_payment_date,
-    referenceDate: new Date()
+    totalInterest,
+    totalInterestPaid
   });
 
   await query(
@@ -248,8 +242,8 @@ async function updateLoan(loanId, payload) {
     balance,
     monthly_interest_due: monthlyInterestDue,
     current_cycle_paid: currentCyclePaid,
-    total_interest: roundTo2(calc.totalPayable - calc.principal),
-    total_interest_paid: roundTo2(Math.min(paid, Math.max(calc.totalPayable - calc.principal, 0))),
+    total_interest: totalInterest,
+    total_interest_paid: totalInterestPaid,
     paid_month_count:
       monthlyInterestDue > 0
         ? Math.floor(roundTo2(Math.min(paid, Math.max(calc.totalPayable - calc.principal, 0))) / monthlyInterestDue)
@@ -292,12 +286,16 @@ async function getLoans(search = '') {
        l.created_at,
        DATE_ADD(l.start_date, INTERVAL l.duration MONTH) AS due_date,
        CASE
-         WHEN l.balance > 0 AND CURRENT_DATE() > l.next_payment_date
+         WHEN l.balance > 0
+              AND l.paid < GREATEST(l.total - l.amount, 0)
+              AND CURRENT_DATE() > l.next_payment_date
          THEN DATEDIFF(CURRENT_DATE(), l.next_payment_date)
          ELSE 0
        END AS overdue_days,
        CASE
-         WHEN l.balance > 0 AND CURRENT_DATE() > l.next_payment_date
+         WHEN l.balance > 0
+              AND l.paid < GREATEST(l.total - l.amount, 0)
+              AND CURRENT_DATE() > l.next_payment_date
          THEN 1
          ELSE 0
        END AS is_overdue,
@@ -341,6 +339,7 @@ async function getOverdueLoans() {
      FROM loans l
      INNER JOIN customers c ON c.id = l.customer_id
      WHERE l.balance > 0
+       AND l.paid < GREATEST(l.total - l.amount, 0)
        AND CURRENT_DATE() > l.next_payment_date
      ORDER BY overdue_days DESC`
   );

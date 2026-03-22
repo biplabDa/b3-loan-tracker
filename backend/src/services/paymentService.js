@@ -33,7 +33,22 @@ async function addPayment(payload) {
     }
 
     const loan = loanRows[0];
+    const totalInterest = roundTo2(Math.max(Number(loan.total) - Number(loan.amount), 0));
+    const existingInterestPaid = roundTo2(Math.min(Number(loan.paid), totalInterest));
+    const remainingInterest = roundTo2(totalInterest - existingInterestPaid);
     const monthlyInterestDue = Number(loan.monthly_interest_due || 0);
+
+    if (remainingInterest <= 0) {
+      const error = new Error('All interest is already paid for this loan.');
+      error.statusCode = StatusCodes.BAD_REQUEST;
+      throw error;
+    }
+
+    if (amount > remainingInterest) {
+      const error = new Error('Payment amount cannot exceed remaining interest amount.');
+      error.statusCode = StatusCodes.BAD_REQUEST;
+      throw error;
+    }
 
     if (amount > Number(loan.balance)) {
       const error = new Error('Payment amount cannot exceed remaining balance.');
@@ -48,7 +63,7 @@ async function addPayment(payload) {
 
     const paid = roundTo2(Number(loan.paid) + amount);
     const balance = roundTo2(Number(loan.balance) - amount);
-    const totalInterest = roundTo2(Math.max(Number(loan.total) - Number(loan.amount), 0));
+    const totalInterestPaid = roundTo2(Math.min(paid, totalInterest));
     let currentCyclePaid = roundTo2(Number(loan.current_cycle_paid || 0) + amount);
     let nextPaymentDate = formatDateOnly(loan.next_payment_date);
 
@@ -58,12 +73,8 @@ async function addPayment(payload) {
     }
 
     const paymentStatus = calculatePaymentStatus({
-      balance,
-      cyclePaid: currentCyclePaid,
-      monthlyInterestDue,
-      nextPaymentDate,
-      lastPaymentDate: paymentDate,
-      referenceDate: paymentDate
+      totalInterest,
+      totalInterestPaid
     });
 
     await connection.execute(
@@ -83,10 +94,10 @@ async function addPayment(payload) {
       paid,
       balance,
       total_interest: totalInterest,
-      total_interest_paid: roundTo2(Math.min(paid, totalInterest)),
+      total_interest_paid: totalInterestPaid,
       current_cycle_paid: currentCyclePaid,
       monthly_interest_due: monthlyInterestDue,
-      paid_month_count: monthlyInterestDue > 0 ? Math.floor(roundTo2(Math.min(paid, totalInterest)) / monthlyInterestDue) : 0,
+      paid_month_count: monthlyInterestDue > 0 ? Math.floor(totalInterestPaid / monthlyInterestDue) : 0,
       next_payment_date: nextPaymentDate,
       payment_status: paymentStatus
     };

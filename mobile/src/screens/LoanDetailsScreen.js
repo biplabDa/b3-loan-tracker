@@ -141,10 +141,6 @@ export default function LoanDetailsScreen() {
       return '#188038';
     }
 
-    if (status === 'UPCOMING') {
-      return '#2563eb';
-    }
-
     if (status === 'PARTIAL') {
       return '#9c5f00';
     }
@@ -261,6 +257,7 @@ export default function LoanDetailsScreen() {
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.payment_status) }]}>
               <Text style={styles.statusText}>{item.payment_status || 'UNPAID'}</Text>
             </View>
+            <Text style={styles.loanLine}>Interest Payment Status: {item.payment_status || 'UNPAID'}</Text>
             <Text style={styles.loanLine}>Principal Amount: {money(item.amount)}</Text>
             <Text style={styles.loanLine}>Monthly Interest: {Number(item.interest_rate || 0).toFixed(2)}%</Text>
             <Text style={styles.loanLine}>Monthly Due: {money(item.monthly_interest_due)}</Text>

@@ -46,35 +46,25 @@ function calculateMonthlyInterestDue(amount, interestRate) {
 }
 
 function calculatePaymentStatus({
-  balance,
-  cyclePaid,
-  monthlyInterestDue,
-  nextPaymentDate,
-  lastPaymentDate,
-  referenceDate = new Date()
+  totalInterest,
+  totalInterestPaid
 }) {
-  if (Number(balance) <= 0) {
+  const interestTotal = roundTo2(Math.max(Number(totalInterest) || 0, 0));
+  const interestPaid = roundTo2(Math.max(Number(totalInterestPaid) || 0, 0));
+
+  if (interestTotal <= 0) {
     return 'PAID';
   }
 
-  const paidThisCycle = roundTo2(Number(cyclePaid) || 0);
-  const dueAmount = roundTo2(Number(monthlyInterestDue) || 0);
-  const dueDate = parseDateOnly(nextPaymentDate);
-  const currentDate = parseDateOnly(referenceDate);
-
-  if (dueAmount > 0 && paidThisCycle >= dueAmount) {
+  if (interestPaid >= interestTotal) {
     return 'PAID';
   }
 
-  if (paidThisCycle > 0) {
-    return currentDate > dueDate ? 'UNPAID' : 'PARTIAL';
+  if (interestPaid > 0) {
+    return 'PARTIAL';
   }
 
-  if (lastPaymentDate && currentDate <= dueDate) {
-    return 'PAID';
-  }
-
-  return currentDate > dueDate ? 'UNPAID' : 'UPCOMING';
+  return 'UNPAID';
 }
 
 module.exports = {

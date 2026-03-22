@@ -108,15 +108,20 @@ export default function PaymentScreen() {
         {loanInfo ? (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryTitle}>{loanInfo.customer_name || `Loan #${loanInfo.id}`}</Text>
-            <Text style={styles.summaryText}>Status: {loanInfo.payment_status || '-'}</Text>
+            <Text style={styles.summaryText}>Interest Payment Status: {loanInfo.payment_status || '-'}</Text>
             <Text style={styles.summaryText}>Monthly Due: {currency(loanInfo.monthly_interest_due)}</Text>
+            <Text style={styles.summaryText}>Total Interest: {currency(loanInfo.total_interest)}</Text>
+            <Text style={styles.summaryText}>Total Interest Paid: {currency(loanInfo.total_interest_paid)}</Text>
+            <Text style={styles.summaryText}>
+              Remaining Interest: {currency((Number(loanInfo.total_interest || 0) - Number(loanInfo.total_interest_paid || 0)) || 0)}
+            </Text>
             <Text style={styles.summaryText}>
               Next Payment Date: {loanInfo.next_payment_date ? String(loanInfo.next_payment_date).slice(0, 10) : '-'}
             </Text>
           </View>
         ) : null}
         <FormInput label="Loan ID" value={loanId} onChangeText={setLoanId} keyboardType="numeric" />
-        <FormInput label="Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
+        <FormInput label="Interest Payment Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
         <DatePickerField label="Payment Date" value={paymentDate} onChangeText={setPaymentDate} />
 
         <Pressable style={styles.button} onPress={submitPayment}>

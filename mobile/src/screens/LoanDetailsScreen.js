@@ -32,6 +32,12 @@ export default function LoanDetailsScreen() {
 
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editingLoanId, setEditingLoanId] = useState(null);
+  const [editCustomerId, setEditCustomerId] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editInterestRate, setEditInterestRate] = useState('');
+  const [editDuration, setEditDuration] = useState('');
+  const [editStartDate, setEditStartDate] = useState('');
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -75,6 +81,53 @@ export default function LoanDetailsScreen() {
     }
   };
 
+  const startEdit = (loan) => {
+    setEditingLoanId(loan.id);
+    setEditCustomerId(String(loan.customer_id || ''));
+    setEditAmount(String(loan.amount || ''));
+    setEditInterestRate(String(loan.interest_rate || ''));
+    setEditDuration(String(loan.duration || ''));
+    setEditStartDate(String(loan.start_date).slice(0, 10));
+  };
+
+  const cancelEdit = () => {
+    setEditingLoanId(null);
+    setEditCustomerId('');
+    setEditAmount('');
+    setEditInterestRate('');
+    setEditDuration('');
+    setEditStartDate('');
+  };
+
+  const saveEdit = async () => {
+    try {
+      await client.put(`/loans/${editingLoanId}`, {
+        customer_id: Number(editCustomerId),
+        amount: Number(editAmount),
+        interest_rate: Number(editInterestRate),
+        duration: Number(editDuration),
+        start_date: editStartDate
+      });
+      Alert.alert('Success', 'Loan updated successfully');
+      cancelEdit();
+      fetchLoans();
+    } catch (error) {
+      Alert.alert('Error', error?.response?.data?.message || 'Unable to update loan');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'PAID') {
+      return '#188038';
+    }
+
+    if (status === 'PARTIAL') {
+      return '#9c5f00';
+    }
+
+    return '#6b7280';
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.formCard}>
@@ -105,12 +158,57 @@ export default function LoanDetailsScreen() {
         renderItem={({ item }) => (
           <View style={styles.loanCard}>
             <Text style={styles.loanHeading}>#{item.id} - {item.customer_name}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.payment_status) }]}>
+              <Text style={styles.statusText}>{item.payment_status || 'UNPAID'}</Text>
+            </View>
             <Text style={styles.loanLine}>Principal: {money(item.amount)}</Text>
+            <Text style={styles.loanLine}>Monthly Interest: {Number(item.interest_rate || 0).toFixed(2)}%</Text>
             <Text style={styles.loanLine}>Total: {money(item.total)}</Text>
             <Text style={styles.loanLine}>EMI: {money(item.emi)}</Text>
             <Text style={styles.loanLine}>Paid: {money(item.paid)}</Text>
             <Text style={styles.loanLine}>Balance: {money(item.balance)}</Text>
             <Text style={styles.loanLine}>Overdue Days: {item.overdue_days}</Text>
+
+            {editingLoanId === item.id ? (
+              <View style={styles.editSection}>
+                <FormInput
+                  label="Customer ID"
+                  value={editCustomerId}
+                  onChangeText={setEditCustomerId}
+                  keyboardType="numeric"
+                />
+                <FormInput label="Loan Amount" value={editAmount} onChangeText={setEditAmount} keyboardType="numeric" />
+                <FormInput
+                  label="Interest Rate (% monthly)"
+                  value={editInterestRate}
+                  onChangeText={setEditInterestRate}
+                  keyboardType="numeric"
+                />
+                <FormInput
+                  label="Duration (months)"
+                  value={editDuration}
+                  onChangeText={setEditDuration}
+                  keyboardType="numeric"
+                />
+                <FormInput
+                  label="Start Date (YYYY-MM-DD)"
+                  value={editStartDate}
+                  onChangeText={setEditStartDate}
+                />
+                <View style={styles.editActions}>
+                  <Pressable style={[styles.smallButton, styles.saveButton]} onPress={saveEdit}>
+                    <Text style={styles.smallButtonText}>Save</Text>
+                  </Pressable>
+                  <Pressable style={[styles.smallButton, styles.cancelButton]} onPress={cancelEdit}>
+                    <Text style={styles.smallButtonText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
+                <Text style={styles.editButtonText}>Edit Loan</Text>
+              </Pressable>
+            )}
 
             <Pressable
               style={styles.payButton}
@@ -183,8 +281,58 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 4
   },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    marginBottom: 6
+  },
+  statusText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12
+  },
   loanLine: {
     color: colors.textSecondary
+  },
+  editSection: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border
+  },
+  editActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4
+  },
+  smallButton: {
+    width: '48%',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center'
+  },
+  saveButton: {
+    backgroundColor: colors.primary
+  },
+  cancelButton: {
+    backgroundColor: '#6b7280'
+  },
+  smallButtonText: {
+    color: '#fff',
+    fontWeight: '700'
+  },
+  editButton: {
+    marginTop: 8,
+    backgroundColor: '#0d9488',
+    borderRadius: 8,
+    alignItems: 'center',
+    paddingVertical: 8
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: '700'
   },
   payButton: {
     marginTop: 8,

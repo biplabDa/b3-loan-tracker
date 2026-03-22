@@ -39,10 +39,12 @@ async function addPayment(payload) {
 
     const paid = roundTo2(Number(loan.paid) + amount);
     const balance = roundTo2(Number(loan.balance) - amount);
+    const paymentStatus = balance <= 0 ? 'PAID' : paid > 0 ? 'PARTIAL' : 'UNPAID';
 
-    await connection.execute('UPDATE loans SET paid = ?, balance = ? WHERE id = ?', [
+    await connection.execute('UPDATE loans SET paid = ?, balance = ?, payment_status = ? WHERE id = ?', [
       paid,
       balance,
+      paymentStatus,
       loanId
     ]);
 
@@ -54,7 +56,8 @@ async function addPayment(payload) {
       amount,
       payment_date: paymentDate,
       paid,
-      balance
+      balance,
+      payment_status: paymentStatus
     };
   } catch (error) {
     await connection.rollback();
